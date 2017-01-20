@@ -1,0 +1,95 @@
+
+{
+  "response": {
+  "version":"0.1",
+  "termsofService":"http://www.wunderground.com/weather/api/d/terms.html",
+  "features": {
+  "conditions": 1
+  }
+	}
+  ,	"current_observation": {
+		"image": {
+		"url":"http://icons.wxug.com/graphics/wu2/logo_130x80.png",
+		"title":"Weather Underground",
+		"link":"http://www.wunderground.com"
+		},
+		"display_location": {
+		"full":"Chungnim-dong, South Korea",
+		"city":"Chungnim-dong",
+		"state":"11",
+		"state_name":"South Korea",
+		"country":"KO",
+		"country_iso3166":"KR",
+		"zip":"00000",
+		"magic":"112",
+		"wmo":"47108",
+		"latitude":"37.560000",
+		"longitude":"126.970000",
+		"elevation":"68.0"
+		},
+		"observation_location": {
+		"full":"Seoul, ",
+		"city":"Seoul",
+		"state":"",
+		"country":"Korea, South",
+		"country_iso3166":"KR",
+		"latitude":"37.57138824",
+		"longitude":"126.96583557",
+		"elevation":"282 ft"
+		},
+		"estimated": {
+		},
+		"station_id":"RKSL",
+		"observation_time":"Last Updated on January 20, 9:00 PM KST",
+		"observation_time_rfc822":"Fri, 20 Jan 2017 21:00:00 +0900",
+		"observation_epoch":"1484913600",
+		"local_time_rfc822":"Sat, 21 Jan 2017 00:13:57 +0900",
+		"local_epoch":"1484925237",
+		"local_tz_short":"KST",
+		"local_tz_long":"Asia/Seoul",
+		"local_tz_offset":"+0900",
+		"weather":"",
+		"temperature_string":"21 F (-6 C)",
+		"temp_f":21,
+		"temp_c":-6,
+		"relative_humidity":"50%",
+		"wind_string":"From the NW at 4 MPH",
+		"wind_dir":"NW",
+		"wind_degrees":320,
+		"wind_mph":4,
+		"wind_gust_mph":0,
+		"wind_kph":6,
+		"wind_gust_kph":0,
+		"pressure_mb":"1028",
+		"pressure_in":"30.37",
+		"pressure_trend":"+",
+		"dewpoint_string":"10 F (-12 C)",
+		"dewpoint_f":10,
+		"dewpoint_c":-12,
+		"heat_index_string":"NA",
+		"heat_index_f":"NA",
+		"heat_index_c":"NA",
+		"windchill_string":"NA",
+		"windchill_f":"NA",
+		"windchill_c":"NA",
+		"feelslike_string":"21 F (-6 C)",
+		"feelslike_f":"21",
+		"feelslike_c":"-6",
+		"visibility_mi":"7.0",
+		"visibility_km":"12.0",
+		"solarradiation":"--",
+		"UV":"-1","precip_1hr_string":" in ( mm)",
+		"precip_1hr_in":"",
+		"precip_1hr_metric":"--",
+		"precip_today_string":" in ( mm)",
+		"precip_today_in":"",
+		"precip_today_metric":"--",
+		"icon":"",
+		"icon_url":"http://icons.wxug.com/i/c/k/nt_.gif",
+		"forecast_url":"http://www.wunderground.com/global/stations/47108.html",
+		"history_url":"http://www.wunderground.com/history/airport/RKSL/2017/1/20/DailyHistory.html",
+		"ob_url":"http://www.wunderground.com/cgi-bin/findweather/getForecast?query=37.57138824,126.96583557",
+		"nowcast":""
+	}
+}
+
