@@ -11,8 +11,7 @@ from apscheduler.scheduler import Scheduler
 #Connect to MongoDB
 client = MongoClient('mongodb://localhost/')
 db = client.fishyDB
-oldmovies = db.oldmovies
-
+stats = db.counts 
 
 #Set up our lovely fishyBOT for daily tweets
 CONSUMER_KEY = 'HmSpsXAzVRRWTBzlam5rU7dvD'
@@ -33,8 +32,26 @@ cron.start()
 
 @cron.interval_schedule(minutes=1)
 def tweet():
-    now = time.strftime("%H:%M:%S")
-    user.update_status("its " + now +"! Tweet!")
+    print("i am gonna tweet!")
+    #d = datetime.datetime.now(pytz.timezone("Asia/Seoul"))
+    now = time.strftime("%Y%m%d")
+    now_time = time.strftime("%I시%M분")
+    if (now_time[0] == '0'):
+        now_time = now_time[1:]
+    snap = stats.find_one({'date':now})
+    fate = random()
+    try:
+        if (fate < 0.5):
+            user.update_status("오늘은 친구들한테 " + str(snap['music']) +"개의 음악을 추천해줬어! 헤헷!!")
+        else:
+            user.update_status("오늘은 친구들에게 " + str(snap['movie']) +"개의 영화을 추천해줬어! 잘했지??")
+    except tweepy.error.TweepError as e: 
+        if ("duplicate" in str(e)):    
+            try: 
+                user.update_status("심심해 심심해!! 놀아줘!!! 나랑 놀아줘!!!!")
+            except tweepy.error.TweepError as e: 
+                if ("duplicate" in str(e)):    
+                    user.update_status("어머! 벌써 " + now_time + "이네! 친구랑 놀다보니까 시간가는 줄도 몰랐다구~")
 
 atexit.register(lambda: cron.shutdown(wait=False))
 
@@ -50,12 +67,16 @@ def respond():
 @app.route('/movie', methods = ['GET'])
 def movie():
     if request.method  == 'GET':
+        #Update count in DB
         now = time.strftime("%Y%m%d")
+        stats.update_one({'date': now},{'$inc': {'movie': 1}}, upsert=True)
+        #Get random year 
         year = time.strftime("%Y")
         newyr = randint(2005,int(year))
         now = str(newyr) + now[4:]
         app.logger.info(now)
         app.logger.info(newyr)
+        #Crawl info from movie page
         url = 'http://movie.naver.com/movie/sdb/rank/rmovie.nhn?sel=cnt&tg=0&date='+now
         data = requests.get(url).text
         soup = BeautifulSoup(data,'lxml')
@@ -82,7 +103,9 @@ def movie():
 @app.route('/music', methods = ['GET'])
 def music():
     if request.method  == 'GET':
+        #Update count in DB
         now = time.strftime("%Y%m%d")
+        stats.update_one({'date': now},{'$inc': {'music': 1}}, upsert=True)
         year = time.strftime("%Y")
         newyr = int(year)
         if (random() > 0.3):
@@ -114,7 +137,7 @@ def music():
         music = songlist[randint(0,cnt-1)] 
         app.logger.info(str(songlist))
         if (gap == 0):
-            msg = "나는 요즘 그 노래가 좋더라! 그...그... " + music[1] +"에 '" + music[0] + "'!! 바다 속까지 소문이 자자하다구~"
+            msg = "나는 요즘 그 노래가 좋더라! 그...그... " + music[1] +"의 '" + music[0] + "'!! 바다 속까지 소문이 자자하다구~"
         elif (gap == 1):
             msg = "작년 이맘때는 '" + music[0] + "'인가?? 많이 들려줬는데.. 다시 듣자!!!"
         elif (gap < 5):
