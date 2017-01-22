@@ -4,15 +4,40 @@ from logging.handlers import RotatingFileHandler
 from pymongo import MongoClient
 from bs4 import BeautifulSoup
 from random import random,randint
+import tweepy,time,sys
+import atexit
+from apscheduler.scheduler import Scheduler
 
 #Connect to MongoDB
 client = MongoClient('mongodb://localhost/')
 db = client.fishyDB
 oldmovies = db.oldmovies
 
+
+#Set up our lovely fishyBOT for daily tweets
+CONSUMER_KEY = 'HmSpsXAzVRRWTBzlam5rU7dvD'
+CONSUMER_SECRET = 'wsR9sIgSzgKuwEbLpUsnrjuytFOWWdnrkUAL9bgujNg5PRiUvv' 
+ACCESS_KEY = '822900504862683136-gmfpt0D7VvpKSda0CDpd3UYPObVXqGX'
+ACCESS_SECRET = 'VZsgzkPuYgrLPZjcDC1hake9RgIJdycQ0llWf1NOy5avu'
+auth = tweepy.OAuthHandler(CONSUMER_KEY,CONSUMER_SECRET)
+auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
+user = tweepy.API(auth)
+
+#exec(open("./tweetbot.py").read())
+#oldmovies.insert_one({"movie_name": "title!!!"})
+
 app = Flask(__name__)
 
-#oldmovies.insert_one({"movie_name": "title!!!"})
+cron = Scheduler(daemon=True)
+cron.start()
+
+@cron.interval_schedule(minutes=1)
+def tweet():
+    now = time.strftime("%H:%M:%S")
+    user.update_status("its " + now +"! Tweet!")
+
+atexit.register(lambda: cron.shutdown(wait=False))
+
 
 @app.route('/')
 def respond():
@@ -102,8 +127,8 @@ def music():
                     msg = "나... 사실 " + music[1] + " 엄청 좋아해!!! ㅎㅎ 넌 제일 좋아하는 가수가 누구야?"          
         return msg
     
-@app.route('/crawl', methods = ['POST','GET'])
-def crawl():
+@app.route('/location', methods = ['POST','GET'])
+def location():
     if request.method == 'GET':
         genre = request.args.get('genre')
         return "here is your " + genre
@@ -146,7 +171,7 @@ def weather():
         str2 = "오늘은 습도는 " + humidity +"래!"
         if (int(humidity[:-1]) > 80):
             str2 = "오늘 습도가 " + humidity + "래! 왠지 몸이 상쾌했어! ㅎㅎ"
-        if (random.random() > 0.5):
+        if (random() > 0.5):
             "흠....오늘 습도는 " + humidity + "정도 되는 것 같네!"
         #Weather
         if ("rain" in weather):
@@ -166,4 +191,4 @@ if __name__ == '__main__':
     handler = RotatingFileHandler('fishy.log', maxBytes=10000, backupCount=1)
     handler.setLevel(logging.INFO)
     app.logger.addHandler(handler)
-    app.run(debug=True,port=8080,host="0.0.0.0")
+    app.run(debug=True,port=8080,host="0.0.0.0",use_reloader = False)
