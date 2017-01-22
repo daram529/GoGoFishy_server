@@ -1,0 +1,116 @@
+
+{
+  "response": {
+  "version":"0.1",
+  "termsofService":"http://www.wunderground.com/weather/api/d/terms.html",
+  "features": {
+  "conditions": 1
+  }
+	}
+  ,	"current_observation": {
+		"image": {
+		"url":"http://icons.wxug.com/graphics/wu2/logo_130x80.png",
+		"title":"Weather Underground",
+		"link":"http://www.wunderground.com"
+		},
+		"display_location": {
+		"full":"Chungnim-dong, South Korea",
+		"city":"Chungnim-dong",
+		"state":"11",
+		"state_name":"South Korea",
+		"country":"KO",
+		"country_iso3166":"KR",
+		"zip":"00000",
+		"magic":"112",
+		"wmo":"47108",
+		"latitude":"37.560000",
+		"longitude":"126.970000",
+		"elevation":"68.0"
+		},
+		"observation_location": {
+		"full":"Seoul, ",
+		"city":"Seoul",
+		"state":"",
+		"country":"Korea, South",
+		"country_iso3166":"KR",
+		"latitude":"37.57138824",
+		"longitude":"126.96583557",
+		"elevation":"282 ft"
+		},
+		"estimated": {
+		},
+		"station_id":"RKSL",
+		"observation_time":"Last Updated on January 23, 12:00 AM KST",
+		"observation_time_rfc822":"Mon, 23 Jan 2017 00:00:00 +0900",
+		"observation_epoch":"1485097200",
+		"local_time_rfc822":"Mon, 23 Jan 2017 02:02:20 +0900",
+		"local_epoch":"1485104540",
+		"local_tz_short":"KST",
+		"local_tz_long":"Asia/Seoul",
+		"local_tz_offset":"+0900",
+		"weather":"Haze",
+		"temperature_string":"12 F (-11 C)",
+		"temp_f":12,
+		"temp_c":-11,
+		"relative_humidity":"49%",
+		"wind_string":"From the West at 5 MPH",
+		"wind_dir":"West",
+		"wind_degrees":270,
+		"wind_mph":5,
+		"wind_gust_mph":0,
+		"wind_kph":7,
+		"wind_gust_kph":0,
+		"pressure_mb":"1030",
+		"pressure_in":"30.42",
+		"pressure_trend":"+",
+		"dewpoint_string":"2 F (-17 C)",
+		"dewpoint_f":2,
+		"dewpoint_c":-17,
+		"heat_index_string":"NA",
+		"heat_index_f":"NA",
+		"heat_index_c":"NA",
+		"windchill_string":"NA",
+		"windchill_f":"NA",
+		"windchill_c":"NA",
+		"feelslike_string":"12 F (-11 C)",
+		"feelslike_f":"12",
+		"feelslike_c":"-11",
+		"visibility_mi":"6.0",
+		"visibility_km":"10.0",
+		"solarradiation":"--",
+		"UV":"-1","precip_1hr_string":" in ( mm)",
+		"precip_1hr_in":"",
+		"precip_1hr_metric":"--",
+		"precip_today_string":" in ( mm)",
+		"precip_today_in":"",
+		"precip_today_metric":"--",
+		"icon":"hazy",
+		"icon_url":"http://icons.wxug.com/i/c/k/nt_hazy.gif",
+		"forecast_url":"http://www.wunderground.com/global/stations/47108.html",
+		"history_url":"http://www.wunderground.com/history/airport/RKSL/2017/1/23/DailyHistory.html",
+		"ob_url":"http://www.wunderground.com/cgi-bin/findweather/getForecast?query=37.57138824,126.96583557",
+		"nowcast":""
+	}
+}
+
+{"response":"이모랑 놀고 싶은데..놀아줄 수 있어요?","id":"552240","result":100,"msg":"OK."}
+{"response":"바람에 오르다에 오지못할이에게요 ","id":"2673074","result":100,"msg":"OK."}
+{"response":"건강이최곤데ㅠㅠ","id":"43892719","result":100,"msg":"OK."}
+0122
+0122
+0122
+0122
+0512
+0512
+0514
+0514
+0514
+0505
+0505
+0505
+0505
+0505
+0515
+05428
+0528
+0514

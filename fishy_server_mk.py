@@ -12,7 +12,6 @@ from apscheduler.scheduler import Scheduler
 client = MongoClient('mongodb://localhost/')
 db = client.fishyDB
 stats = db.counts 
-events = db.events
 
 #Set up our lovely fishyBOT for daily tweets
 CONSUMER_KEY = 'HmSpsXAzVRRWTBzlam5rU7dvD'
@@ -31,7 +30,7 @@ app = Flask(__name__)
 cron = Scheduler(daemon=True)
 cron.start()
 
-@cron.interval_schedule(minutes=5)
+@cron.interval_schedule(minutes=1)
 def tweet():
     print("i am gonna tweet!")
     #d = datetime.datetime.now(pytz.timezone("Asia/Seoul"))
@@ -49,7 +48,7 @@ def tweet():
     except tweepy.error.TweepError as e: 
         if ("duplicate" in str(e)):    
             try: 
-                user.update_status("심심해!! 놀아줘!!! 나랑 놀아줘!!!!")
+                user.update_status("심심해 심심해!! 놀아줘!!! 나랑 놀아줘!!!!")
             except tweepy.error.TweepError as e: 
                 if ("duplicate" in str(e)):    
                     user.update_status("어머! 벌써 " + now_time + "이네! 친구랑 놀다보니까 시간가는 줄도 몰랐다구~")
@@ -150,31 +149,29 @@ def music():
                 if (random() > 0.7):
                     msg = "나... 사실 " + music[1] + " 엄청 좋아해!!! ㅎㅎ 넌 제일 좋아하는 가수가 누구야?"          
         return msg
-    
+
+@app.route('/message', methods = ['POST','GET'])
+def response():
+    key = "a351b95c-1a51-4f20-b6db-9a4db18d6703"
+    if request.method == 'GET':
+        message = request.args.get('msg')
+        url = "http://sandbox.api.simsimi.com/request.p?key=" + key + "&lc=ko&ft=1.0&text="+message
+        w = requests.get(url).text
+        app.logger.info(w)
+        data = json.loads(w)
+        msg = data['response']
+        return msg
+
 @app.route('/location', methods = ['POST','GET'])
 def location():
     if request.method == 'GET':
         genre = request.args.get('genre')
         return "here is your " + genre
 
-fourteens = ['다이어리','밸런타인', '화이트', '블랙','로즈','키스','실버', '그린','포토','와인','무비','허그']
 @app.route('/event', methods = ['POST', 'GET'])
 def event():
-    now = request.args.get("date")
-    #now = time.strftime("%m%d")
-    app.logger.info(now)
-    if(now[2:] != 14):
-        event = events.find_one({"date": now})
-        if(event):
-            if (event['law'] != 'N/A'):
-                return "오늘이 " + event['name'] +"이라지? " + event['law'] + "에 대해서 알고 있니?" 
-            else:
-                return "오늘은 " + event['name'] + "로서 " + event['detail'][:-1] + "고해. 몰랐지! 물고기인 나보다도 세상 물정이 관심이 없다니!"
-        else: 
-            return "오늘도 행복한 하루를 지내고 있니?"
-    else: #14일 일때
-        month = int(time.strftime("%m"))
-        return "오늘이 " + fourteens[month] + "데이라며? 무슨 특별한 계획이라두 있어~~? ㅎㅎㅎ"
+    events = ['다이어리','밸런타인', '화이트', '블랙','로즈','키스','실버', '그린','포토','와인','무비','허그']
+    return "오늘이 " + events[0] + "데이라며?"
 
 @app.route('/weather', methods = ['POST','GET'])
 def weather():
