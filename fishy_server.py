@@ -1,20 +1,18 @@
+import json,requests,logging,random,urllib,time,tweepy,sys,atexit,re
 from flask import Flask, redirect, url_for, request
-import json,requests,logging,random,urllib,time
 from logging.handlers import RotatingFileHandler
 from pymongo import MongoClient
 from bs4 import BeautifulSoup
 from random import random,randint
-import tweepy,time,sys
-import atexit
 from apscheduler.scheduler import Scheduler
 
-#Connect to MongoDB
+###### Connect to MongoDB ######################################################
 client = MongoClient('mongodb://localhost/')
 db = client.fishyDB
 stats = db.counts 
 events = db.events
 
-#Set up our lovely fishyBOT for daily tweets
+###### Set up our lovely fishyBOT for daily tweets #############################
 CONSUMER_KEY = 'HmSpsXAzVRRWTBzlam5rU7dvD'
 CONSUMER_SECRET = 'wsR9sIgSzgKuwEbLpUsnrjuytFOWWdnrkUAL9bgujNg5PRiUvv' 
 ACCESS_KEY = '822900504862683136-gmfpt0D7VvpKSda0CDpd3UYPObVXqGX'
@@ -23,11 +21,10 @@ auth = tweepy.OAuthHandler(CONSUMER_KEY,CONSUMER_SECRET)
 auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
 user = tweepy.API(auth)
 
-#exec(open("./tweetbot.py").read())
-#oldmovies.insert_one({"movie_name": "title!!!"})
 
 app = Flask(__name__)
 
+###### TweetBot Fishy Running! ################################################# 
 cron = Scheduler(daemon=True)
 cron.start()
 
@@ -57,13 +54,47 @@ def tweet():
 atexit.register(lambda: cron.shutdown(wait=False))
 
 
+###### handmade english-korean dictionary API ##################################
+def get_korean(query):
+    url = 'http://dic.daum.net/search.do?dic=eng&q=' +query
+    data = requests.get(url).text
+    soup = BeautifulSoup(data,'lxml')
+    conts = soup.findAll("script", {"type": "text/javascript"}) 
+    refresh_tag = ""
+    for c in conts: 
+        if ("has_exact_redirect" in c.text):
+            refresh_tag = c
+    print("REFRESH TAG = " + str(refresh_tag))
+    
+    #Where there is no corresponding korean definition
+    if (refresh_tag == ""):
+       return "N/A" 
+    pieces = str(refresh_tag).split()
+    #print(pieces)
+    for p in pieces: 
+        if ("ekw" in p):
+            wordid = p.replace("'","").replace("]);","")
+            print("id=" + wordid)
+    
+    #Go to the actual word page
+    url = 'http://dic.daum.net/word/view.do?wordid='+wordid+'&q='+query
+    data = requests.get(url).text
+    soup = BeautifulSoup(data,'lxml')
+    conts = soup.find("ul", {"class": "list_mean"})
+    meanings = re.split('[1-9]', conts.text)
+    meanings = [w.strip().replace(".","") for w in meanings]
+    meanings = [w for w in meanings if w != '']
+    return meanings
+
+
+##### Flask implementations ####################################################
+
+routes = ['movie','movie','music','music','vocab','vocab','vocab','weather','event']
+
 @app.route('/')
 def respond():
-    fate = random()
-    if (fate < 0.5):
-        return redirect(url_for('movie'))
-    else:
-        return redirect(url_for('music'))
+    choice = randint(0,8)
+    return redirect(url_for(routes[choice]))
 
 @app.route('/movie', methods = ['GET'])
 def movie():
@@ -94,12 +125,46 @@ def movie():
         if (random() > 0.5):
             msg = "갑자기 영화가 너무 땡기는 걸? '" + movie +"' 보고 싶어!"
         if (gap == 0):
-            msg = "요즘은 '" + movie +"'가 히트라며? 설마 나없이 혼자 본거는 아니지?"
+            msg = "요즘은 '" + movie +"'가 히트라며? 설마 나없이 혼자 벌써 본거는 아니지?"
             if (random() > 0.5):
-                msg = "최근 '" + movie + "'라는 영화가 나왔던데! 같이 보장!! ㅎㅎ" 
+                msg = "최근 '" + movie + "'라는 영화가 나왔던데! 같이 보장!! 오랜만의 데이또오~?ㅎㅎ" 
         if (gap > 7):
             msg = "오늘은 함께 추억에 젖어볼까? " + str(gap) + "년 전을 회상하며... '" + movie + "'같은 영화는 어때?"
         return msg 
+
+@app.route('/vocab',methods = ['GET'])
+def vocab():
+    if request.method == 'GET': 
+        #Update count in DB
+        now = time.strftime("%Y%m%d")
+        stats.update_one({'date': now},{'$inc': {'vocab': 1}}, upsert=True)
+        #Get random year 
+        year = time.strftime("%Y")
+        month = time.strftime("%m") 
+        day = time.strftime("%d")
+        newdate = str(randint(2000,int(year)-1)) + "/"  + str(randint(1,12)) + "/" +str(randint(1,31)) 
+        app.logger.info(newdate)
+        #Crawl info from movie page
+        url = 'http://www.dictionary.com/wordoftheday/' + newdate
+        data = requests.get(url).text
+        soup = BeautifulSoup(data,'lxml')
+        conts = soup.find("div", {"class": "definition-box"}) 
+        word = conts.text.split()[2]
+        print(word)
+        inkorean = get_korean(word)
+        if (inkorean == "N/A"):
+            return "요즘 영어공부를 하고 있는데 말이야... 으으..." + word +"뜻이 뭐였더라? 아는게 많으니까 헷갈리네...."
+        meanings = ','.join(inkorean)
+        msg = "눈누난나아~ 요즘은 영어를 배우고 있어! " + word + "가 '" + meanings + "'인거 알았니??  후훗! 역시 나는 똑똑한 물고기야"
+        prob = random()
+        if (prob > 0.7):
+            msg = "이 똑똑한 물고기가 어려운 영어 단어 하나 알려주지! " + word + "는 '" + meanings + "'!!!! 내가 알려준거니까 꼭 기억해야해~"
+        elif (prob > 0.4):
+            msg = "요즘은 바다 속도 글로벌 시대다 어쩐다...에휴...난리도 아니야... 오늘은 영어시간에 " + word + "를 배웠는데... '" + meanings+"'이래나 뭐래나..."
+        elif (prob > 0.2):
+            msg = word + "는 " + meanings + "!! " + word + "는 " + meanings + "!!!!!! " +  word + "는 " + meanings + "!!!!!!! 으아ㅏㅏㅏ 안 외어진다!!!!!"
+        return msg
+        #top10 = conts.findAll("div", {"class":"tit3"})[:10] #returns a list
 
 @app.route('/music', methods = ['GET'])
 def music():
@@ -160,14 +225,14 @@ def location():
 fourteens = ['다이어리','밸런타인', '화이트', '블랙','로즈','키스','실버', '그린','포토','와인','무비','허그']
 @app.route('/event', methods = ['POST', 'GET'])
 def event():
-    now = request.args.get("date")
-    #now = time.strftime("%m%d")
+    #now = request.args.get("date")
+    now = time.strftime("%m%d")
     app.logger.info(now)
-    if(now[2:] != 14):
+    if(now[2:] != '14'):
         event = events.find_one({"date": now})
         if(event):
             if (event['law'] != 'N/A'):
-                return "오늘이 " + event['name'] +"이라지? " + event['law'] + "에 대해서 알고 있니?" 
+                return "오늘이 " + event['name'] +"이라지? " + event['law'] + "에 대해서 알고 있니? 난 다아는데~~" 
             else:
                 return "오늘은 " + event['name'] + "로서 " + event['detail'][:-1] + "고해. 몰랐지! 물고기인 나보다도 세상 물정이 관심이 없다니!"
         else: 
