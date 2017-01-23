@@ -11,6 +11,7 @@ client = MongoClient('mongodb://localhost/')
 db = client.fishyDB
 stats = db.counts 
 events = db.events
+qoutes = db.qoutes
 
 ###### Set up our lovely fishyBOT for daily tweets #############################
 CONSUMER_KEY = 'HmSpsXAzVRRWTBzlam5rU7dvD'
@@ -89,11 +90,11 @@ def get_korean(query):
 
 ##### Flask implementations ####################################################
 
-routes = ['movie','movie','music','music','vocab','vocab','vocab','weather','event']
+routes = ['movie','movie','music','music','talk','vocab','vocab','vocab','weather','event']
 
 @app.route('/')
 def respond():
-    choice = randint(0,8)
+    choice = randint(0,9)
     return redirect(url_for(routes[choice]))
 
 @app.route('/movie', methods = ['GET'])
@@ -123,14 +124,28 @@ def movie():
         gap = int(year) - newyr
         msg = "오늘 같은 날 영화는 어때? " + str(gap) + "년 전 이맘 때는 '" + movie + "'때문에 난리 였었지...." 
         if (random() > 0.5):
-            msg = "갑자기 영화가 너무 땡기는 걸? '" + movie +"' 보고 싶어!"
+            msg = "갑자기 영화가 땡겨 그... '" + movie +"' 보고 싶어!"
         if (gap == 0):
-            msg = "요즘은 '" + movie +"'가 히트라며? 설마 나없이 혼자 벌써 본거는 아니지?"
+            msg = "요즘은 '" + movie +"'가 히트라며? 설마 나없이 혼자 벌써 본거는 아니지...?"
             if (random() > 0.5):
                 msg = "최근 '" + movie + "'라는 영화가 나왔던데! 같이 보장!! 오랜만의 데이또오~?ㅎㅎ" 
         if (gap > 7):
             msg = "오늘은 함께 추억에 젖어볼까? " + str(gap) + "년 전을 회상하며... '" + movie + "'같은 영화는 어때?"
         return msg 
+
+@app.route('/message', methods = ['POST','GET'])
+def response():
+    #key = "a351b95c-1a51-4f20-b6db-9a4db18d6703"
+    key = "f06bc964-eb6b-4d8d-a6d3-25c181fe35e7" 
+    if request.method == 'GET':
+        message = request.args.get('msg')
+        url = "http://sandbox.api.simsimi.com/request.p?key=" + key + "&lc=ko&ft=1.0&text="+message
+        w = requests.get(url).text
+        app.logger.info(w)
+        data = json.loads(w)
+        msg = data['response']
+        msg = msg.replace("심심이", "장미")
+        return msg
 
 @app.route('/vocab',methods = ['GET'])
 def vocab():
@@ -153,16 +168,16 @@ def vocab():
         print(word)
         inkorean = get_korean(word)
         if (inkorean == "N/A"):
-            return "요즘 영어공부를 하고 있는데 말이야... 으으..." + word +"뜻이 뭐였더라? 아는게 많으니까 헷갈리네...."
+            return "요즘 영어공부를 하고 있는데 말이야... 으으..." + word +"뜻이 뭐였더라? 아는게 많으니까 헷갈린다...."
         meanings = ','.join(inkorean)
-        msg = "눈누난나아~ 요즘은 영어를 배우고 있어! " + word + "가 '" + meanings + "'인거 알았니??  후훗! 역시 나는 똑똑한 물고기야"
+        msg = "요즘은 영어를 배우고 있어! " + word + "가 '" + meanings + "'인거 알았어??  후훗! 역시 나는 똑똑한 장미야"
         prob = random()
         if (prob > 0.7):
-            msg = "이 똑똑한 물고기가 어려운 영어 단어 하나 알려주지! " + word + "는 '" + meanings + "'!!!! 내가 알려준거니까 꼭 기억해야해~"
+            msg = "오늘은 어려운 영어 단어 하나 알려줄게...! " + word + "는 '" + meanings + "'! 내가 알려준거니까 꼭 기억해야해..."
         elif (prob > 0.4):
-            msg = "요즘은 바다 속도 글로벌 시대다 어쩐다...에휴...난리도 아니야... 오늘은 영어시간에 " + word + "를 배웠는데... '" + meanings+"'이래나 뭐래나..."
+            msg = "오늘은 어떤 초등학교를 구경갔어.... 영어시간에 " + word + "를 배웠는데... '" + meanings+"'이래나 뭐래나..."
         elif (prob > 0.2):
-            msg = word + "는 " + meanings + "!! " + word + "는 " + meanings + "!!!!!! " +  word + "는 " + meanings + "!!!!!!! 으아ㅏㅏㅏ 안 외어진다!!!!!"
+            msg = word + "는 " + meanings + "!! " + word + "는 " + meanings + "!!!!!! " +  word + "는 " + meanings + "!!!!!!! 으.. 생각보다 안외워진다..."
         return msg
         #top10 = conts.findAll("div", {"class":"tit3"})[:10] #returns a list
 
@@ -203,24 +218,27 @@ def music():
         music = songlist[randint(0,cnt-1)] 
         app.logger.info(str(songlist))
         if (gap == 0):
-            msg = "나는 요즘 그 노래가 좋더라! 그...그... " + music[1] +"의 '" + music[0] + "'!! 바다 속까지 소문이 자자하다구~"
+            msg = "나는 요즘 그 노래가 좋더라! 그...그... " + music[1] +"의 '" + music[0] + "'!! 여기까지 소문이 자자한걸?"
         elif (gap == 1):
-            msg = "작년 이맘때는 '" + music[0] + "'인가?? 많이 들려줬는데.. 다시 듣자!!!"
+            msg = "작년 이맘때는 '" + music[0] + "'인가?? 많이 들려줬는데.."
         elif (gap < 5):
-            msg = "오늘은 " + music[1] + "의 '" + music[0] + "'가 듣고 싶다 ㅎㅎ 그게 " + str(gap) + "년 전 노래였던가...? 물고기라고 기억이 다 안좋은거는 아니야!!!" 
+            msg = "오늘은 " + music[1] + "의 '" + music[0] + "'가 듣고 싶다 ㅎㅎ 그게 " + str(gap) + "년 전 노래였던가...? 나는 장미 중에도 기억력이 좋은 편이지!" 
         else:
-            msg = "갑자기 '" + music[0] + "'이 듣고 싶네... " + music[1] + " 디게 좋아했었는데... 벌써 그게 " + str(gap) +"년 전이라니... 앗...! 아니야!! 물론 엄마가 알려준거야! 나는 사실 굉장히 어리다구!!" 
+            msg = "갑자기 '" + music[0] + "'이 듣고 싶네... " + music[1] + " 디게 좋아했었는데... 벌써 그게 " + str(gap) +"년 전이라니... 앗...! 아니야!! 나는 아직 어려! 젋고 아름답다구!!" 
             if (random() > 0.4):
-                msg = "혹시 '" + music[0] + "'라는 노래 알아? 내 친구가 바다 속에 자꾸 흥얼거리길래...."
+                msg = "혹시 '" + music[0] + "'라는 노래 알아? 머리에 자꾸 맴도는 걸......"
                 if (random() > 0.7):
-                    msg = "나... 사실 " + music[1] + " 엄청 좋아해!!! ㅎㅎ 넌 제일 좋아하는 가수가 누구야?"          
+                    msg = "나... 사실 " + music[1] + " 엄청 좋아해..ㅎㅎ 넌 제일 좋아하는 가수가 누구야?"          
         return msg
     
-@app.route('/location', methods = ['POST','GET'])
-def location():
+@app.route('/talk', methods = ['POST','GET'])
+def talk():
     if request.method == 'GET':
-        genre = request.args.get('genre')
-        return "here is your " + genre
+        idx = randint(0,39)
+        app.logger.info(idx)
+        atalk = qoutes.find_one({"idx":idx})
+        app.logger.info(atalk)
+        return atalk['qoute']
 
 fourteens = ['다이어리','밸런타인', '화이트', '블랙','로즈','키스','실버', '그린','포토','와인','무비','허그']
 @app.route('/event', methods = ['POST', 'GET'])
@@ -232,15 +250,25 @@ def event():
         event = events.find_one({"date": now})
         if(event):
             if (event['law'] != 'N/A'):
-                return "오늘이 " + event['name'] +"이라지? " + event['law'] + "에 대해서 알고 있니? 난 다아는데~~" 
+                return "오늘이 " + event['name'] +"이라지? " + event['law'] + "에 대해서 알고 있니? 이렇게 박학다식한 장미 봤어?" 
             else:
-                return "오늘은 " + event['name'] + "로서 " + event['detail'][:-1] + "고해. 몰랐지! 물고기인 나보다도 세상 물정이 관심이 없다니!"
+                return "오늘은 " + event['name'] + "로서 " + event['detail'][:-1] + "고해. 몰랐지? 후훗, 이 장미보다도 세상 물정이 관심이 없다니!"
         else: 
-            return "오늘도 행복한 하루를 지내고 있니?"
+            msg = "오늘도 행복한 하루를 지내고 있니?"
+            if (random() > 0.7):
+                msg = "왜 장미는 늘 얌전해야 하지...? 터프한 장미가 되고 싶어!"
+            elif (random() > 0.5):
+                msg = "언젠가 꼭 장미를 선물하고 싶은 사람이 생기면... 그 때는 나를 꺽어도 좋아..."
+            return msg
     else: #14일 일때
         month = int(time.strftime("%m"))
-        return "오늘이 " + fourteens[month] + "데이라며? 무슨 특별한 계획이라두 있어~~? ㅎㅎㅎ"
-
+        if (month == 5):
+            return "오늘은 로오오즈 데이! 바로 나의 생일이야! 유난히 별들이 더 반짝이는 것 같아!"
+        msg = "오늘이 " + fourteens[month-1] + "데이라며? 무슨 특별한 계획이라두 있어?"
+        if (random() > 0.5):
+            msg = fourteens[month-1] + "데이에 나는 더 외로워져... 나를 버리면 안돼..."
+        return msg
+    
 @app.route('/weather', methods = ['POST','GET'])
 def weather():
     if request.method == 'GET':
@@ -257,11 +285,12 @@ def weather():
         humidity = data["relative_humidity"]
         temp = data["temp_c"]
         weather = data["weather"]
+        wind = data["wind_kph"]
         #Temperature
         if (temp < 0):
-            str1 = "오늘 온도가 " +str(temp) + "도라며???!! 오늘 같은 날은 물고기에게는 너무 고달픈 날이야... 물이 다 얼어버린다구!!! 너가 그 기분을 알아?"
+            str1 = "오늘 온도가 " +str(temp) + "도라며???!! 오늘 같은 날은 나에게는 너무 고달픈 날이야... 내 가시들이 다 얼어버린다구!!! 너가 그 기분을 알아?"
             if (random() > 0.5):
-                str1 = "흐헝..... " + str(temp) + "도라니..... 물이 얼면 어떡할꺼야!!! 너 나 없이 살 수 있어???!!!"
+                str1 = "흐헝..... " + str(temp) + "도라니..... 몸이 얼면 어떡할꺼야!!! 너 나 없이 살 수 있어???!!!"
         elif (temp < 10):
             str1 = "오늘 온도는 " + str(temp) + "도라는데.. 으 조금 쌀쌀한 것 같아... 오늘은 나를 더 챙겨줘...."
         elif (temp < 20):
@@ -269,7 +298,7 @@ def weather():
         elif (temp < 30):
             str1 = "아이 좋아 ㅎㅎㅎ 오늘 온도가 " + str(temp) + "도더라구 ㅎㅎㅎ 왠지 기분이 좋았어!"
         elif (temp < 40): 
-            str1 = "오늘 온도가 대충 " + temp + "정도 인 것 같은데.... 헥헥 너무 더워.... 더운 날에는 물에 수분이 부족하다구!!!!"
+            str1 = "오늘 온도가 대충 " + temp + "정도 인 것 같은데.... 헥헥 너무 더워.... 더운 날에는 물에 수분이 부족하다구!!! 물 주는 것을 잊으면 안돼!"
         #Humidity
         str2 = "오늘은 습도는 " + humidity +"래!"
         if (int(humidity[:-1]) > 80):
@@ -278,17 +307,24 @@ def weather():
             "흠....오늘 습도는 " + humidity + "정도 되는 것 같네!"
         #Weather
         if ("rain" in weather):
-            str3 = "앗! 오늘은 비가 온대! 우산을 꼭 챙기도록 해!"
+            str3 = "앗! 오늘은 비가 온대! 우산을 꼭 챙기도록 해! 나는 이 유리 덕에 끄떡없지!"
             if (random() > 0.3):
                 str3 = "오늘은 비가 오니까 비 노래를 듣는 건 어때? Rainism~ Rainism~"
         elif ("Snow" in weather):
             str3 = "오늘은 눈이 와... ㅎㅎ 새하얀 눈은 언제 봐도 이쁜 것 같아..."
             if ("Light" in weather):
-                str3 = "하늘을 보니 오늘은 눈이 조금 올 것 같아! 물고기도 하늘을 볼 수 있다구!"
+                str3 = "하늘을 보니 오늘은 눈이 조금 올 것 같아!!!!"
         else: 
-            str3 = "오늘도 좋은 하루 보내~"
-        res = [str1,str2,str3]
-        return res[randint(0,2)]
+            str3 = "오늘도 좋은 하루 보내고 있어?"
+        #Wind
+        if (wind > 20):
+            str4 = "으아ㅏㅏㅏ 오늘은 바람이 많이 불어!! 내가 휩쓸려 날라가지 않게 자주자주 확인해줘야해!!"
+        elif (wind > 10):
+            str4 = "오늘은 좀 으슬으슬 쌀쌀한 것 같아 으... 나를 더 잘 챙겨줘야해... "
+        else: 
+            str4 = "오늘은 작은 씨앗이 놀러왔었어...."
+        res = [str1,str2,str3,str4]
+        return res[randint(0,3)]
 
 if __name__ == '__main__':
     handler = RotatingFileHandler('fishy.log', maxBytes=10000, backupCount=1)
