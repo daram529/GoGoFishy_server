@@ -1,10 +1,17 @@
-import json,requests,logging,random,urllib,time,tweepy,sys,atexit,re
+import json,requests,logging,random,urllib,time,tweepy,sys,atexit,re,pytz
 from flask import Flask, redirect, url_for, request
 from logging.handlers import RotatingFileHandler
 from pymongo import MongoClient
 from bs4 import BeautifulSoup
+from datetime import datetime
 from random import random,randint
 from apscheduler.scheduler import Scheduler
+
+
+###### Setup timezone ##########################################################
+utcmoment_unaware = datetime.utcnow()
+utcmoment = utcmoment_unaware.replace(tzinfo=pytz.utc)
+ltime = utcmoment.astimezone(pytz.timezone('Asia/Seoul'))
 
 ###### Connect to MongoDB ######################################################
 client = MongoClient('mongodb://localhost/')
@@ -32,8 +39,8 @@ cron.start()
 def tweet():
     print("i am gonna tweet!")
     #d = datetime.datetime.now(pytz.timezone("Asia/Seoul"))
-    now = time.strftime("%Y%m%d")
-    now_time = time.strftime("%I시%M분")
+    now = ltime.strftime("%Y%m%d")
+    now_time = ltime.strftime("%I시%M분")
     if (now_time[0] == '0'):
         now_time = now_time[1:]
     snap = stats.find_one({'date':now})
@@ -46,12 +53,21 @@ def tweet():
         elif (fate > 0.7):
             user.update_status("오늘은 친구들에게 " + str(snap['movie']) +"개의 영화을 추천해줬어! 잘했지??")
         elif (fate > 0.6): 
-            user.update_status("오늘 친구들과 " + str(snap['total']) +"마디의 말을 햇어~ ㅎㅎ 난 역시 인기가 많은 장미야!")
+            if (snap['total'] < 20):
+                user.update_status("오늘은 " + str(snap['total']) +"마디밖에 해주지 못했어.. 점점 나를 찾지 않아주거든...")
+            else:   
+                msg1 = "오늘 친구들과 " + str(snap['total']) +"마디의 말을 햇어~ ㅎㅎ 난 역시 인기가 많은 장미야!"
+                if (random() > 0.5):
+                    msg1 += " 꺄햐햐햐햐하하하ㅏ하ㅏ 인기의 비결이 궁금하다구? "
+                user.update_status(msg1)
         elif (fate > 0.5):
             count = snap['msg']
             if (count > 200):
                 pass 
-            user.update_status("오늘은 친구들이 " + str(snap['msg']) + "번이나 말을 걸어주었어.... 이걸 어떻게 다 셋냐구? 사실 나는 외로운 장미야.... ")
+            if (random() > 0.2):
+                user.update_status("오늘은 친구들이 " + str(snap['msg']) + "번이나 말을 걸어주었어.... 이걸 어떻게 다 셌냐구? 사실 나는 외로운 장미야.... ")
+            else:
+                user.update_status("로지가 어떻게 트위터를 하게 되었냐구? 어느 날 하늘을 날던 파랑새가 와서 알려주었어")
         else: 
             fate2 = random()
             if (fate2 > 0.8): msg = movie()
@@ -62,15 +78,17 @@ def tweet():
             user.update_status(msg)
     except tweepy.error.TweepError as e: 
         if ("duplicate" in str(e)):    
-            try: 
-                user.update_status("심심해!! 놀아줘!!! 나랑 놀아줘!!!!")
-            except tweepy.error.TweepError as e: 
-                if ("duplicate" in str(e)):    
-                    fate3 = random()
-                    if (fate3 > 0.7):
-                        user.update_status("지금 시간이 " + now_time + "이네? 다들 뭐하고 있는 걸까.... 로지는 외로워....")
-                    elif (fate3 > 0.4): 
-                        user.update_status(now_time + "인데... 다들 바쁜가봐... 아무도 찾아주지 않아...")
+            fate3 = random()
+            if (fate3 > 0.8):
+                user.update_status("지금 시간이 " + now_time + "이네? 다들 뭐하고 있는 걸까.... 로지는 외로워....")
+            elif (fate3 > 0.6):
+                user.update_status("로지에게도 관심을 가져죠..... " +now_time + "인데 뭐하는거야ㅜㅜㅜ")
+            elif (fate3 > 0.4): 
+                user.update_status(now_time + "인데... 다들 바쁜가봐... 아무도 찾아주지 않아...")
+            elif (fate3 > 0.2):
+                user.update_status("아직도 " +now_time + "이네.... 앗! 절대 너를 기다리며 시계만 보고 있었던 건 아니야!")
+            else: 
+                user.update_status("이제 너에게 잊혀진걸까... " +now_time + "까지 연락이 없네...")
 
 atexit.register(lambda: cron.shutdown(wait=False))
 
@@ -114,7 +132,7 @@ routes_widget = ['movie','movie','music','music','talk','vocab','vocab','vocab',
 
 @app.route('/')
 def respond():
-    now = time.strftime("%Y%m%d")
+    now = ltime.strftime("%Y%m%d")
     stats.update_one({'date': now},{'$inc': {'total': 1}}, upsert=True)
     if ("long") not in request.url:
         choice = randint(0,8);
@@ -129,10 +147,10 @@ def respond():
 @app.route('/movie', methods = ['GET'])
 def movie():
     #Update count in DB
-    now = time.strftime("%Y%m%d")
+    now = ltime.strftime("%Y%m%d")
     stats.update_one({'date': now},{'$inc': {'movie': 1}}, upsert=True)
     #Get random year 
-    year = time.strftime("%Y")
+    year = ltime.strftime("%Y")
     newyr = randint(2005,int(year))
     now = str(newyr) + now[4:]
     app.logger.info(now)
@@ -151,7 +169,10 @@ def movie():
     movie = titles[randint(0,9)] 
     gap = int(year) - newyr
     msg = "오늘 같은 날 영화는 어때? " + str(gap) + "년 전 이맘 때는 '" + movie + "'때문에 난리 였었지...." 
-    if (random() > 0.5):
+    fate = random()
+    if (fate > 0.7):
+        msg = "전에 영화관이라는 곳을 갔었는데 말이야.... " + str(gap) + "년 전이였나? '" + movie + "'를 봤었던 것 같아"
+    elif (fate > 0.5):
         msg = "갑자기 영화가 땡겨 그... '" + movie +"' 보고 싶어!"
     if (gap == 0):
         msg = "요즘은 '" + movie +"'가 히트라며? 설마 나없이 혼자 벌써 본거는 아니지...?"
@@ -159,12 +180,17 @@ def movie():
             msg = "최근 '" + movie + "'라는 영화가 나왔던데! 같이 보장!! 오랜만의 데이또오~?ㅎㅎ" 
     if (gap > 7):
         msg = "오늘은 함께 추억에 젖어볼까? " + str(gap) + "년 전을 회상하며... '" + movie + "'같은 영화는 어때?"
+        fate4 = random()
+        if (fate4 > 0.6):
+            msg = "'" + moive + "'라는 영화가 생각나네.. 맞아 사실 나는 굉장히 늙은 장미야. 그치만 너만은 아름답다고 해줘..."
+        elif (fate4 > 0.3):
+            msg = "오늘은 추억을 회상하는 장미가 되고 싶어...." + str(gap) + "년 전처럼 말이야. 그때가 '" + movie + "'가 히트였나?"
     return msg 
 
 @app.route('/message', methods = ['POST','GET'])
 def response():
     #Update count in DB
-    now = time.strftime("%Y%m%d")
+    now = ltime.strftime("%Y%m%d")
     stats.update_one({'date': now},{'$inc': {'msg': 1}}, upsert=True)
     #key = "a351b95c-1a51-4f20-b6db-9a4db18d6703"
     key = "f06bc964-eb6b-4d8d-a6d3-25c181fe35e7" 
@@ -182,12 +208,12 @@ def response():
 @app.route('/vocab',methods = ['GET'])
 def vocab():
     #Update count in DB
-    now = time.strftime("%Y%m%d")
+    now = ltime.strftime("%Y%m%d")
     stats.update_one({'date': now},{'$inc': {'vocab': 1}}, upsert=True)
     #Get random year 
-    year = time.strftime("%Y")
-    month = time.strftime("%m") 
-    day = time.strftime("%d")
+    year = ltime.strftime("%Y")
+    month = ltime.strftime("%m") 
+    day = ltime.strftime("%d")
     newdate = str(randint(2000,int(year)-1)) + "/"  + str(randint(1,12)) + "/" +str(randint(1,31)) 
     app.logger.info(newdate)
     #Crawl info from movie page
@@ -205,19 +231,22 @@ def vocab():
     prob = random()
     if (prob > 0.7):
         msg = "오늘은 어려운 영어 단어 하나 알려줄게...! " + word + "는 '" + meanings + "'! 내가 알려준거니까 꼭 기억해야해..."
-    elif (prob > 0.4):
+    elif (prob > 0.5):
         msg = "오늘은 어떤 초등학교를 구경갔어.... 영어시간에 " + word + "를 배웠는데... '" + meanings+"'이래나 뭐래나..."
+    elif (prob > 0.3): 
+        msg = word + "는 '"+ meanings + "'! 영어하는 장미는 처음이지? 훗 내가 바로 로지지!"
     elif (prob > 0.2):
         msg = word + "는 " + meanings + "!! " + word + "는 " + meanings + "!!!!!! " +  word + "는 " + meanings + "!!!!!!! 으.. 생각보다 안외워진다..."
+    elif (prob > 0.1):
+        msg = "혹시 " + word + "의 뜻을 아니...? 귀찮게 했다면 미안해... 사실 이렇게라도 너와 대화하고 싶었어..."
     return msg
-        #top10 = conts.findAll("div", {"class":"tit3"})[:10] #returns a list
 
 @app.route('/music', methods = ['GET'])
 def music():
     #Update count in DB
-    now = time.strftime("%Y%m%d")
+    now = ltime.strftime("%Y%m%d")
     stats.update_one({'date': now},{'$inc': {'music': 1}}, upsert=True)
-    year = time.strftime("%Y")
+    year = ltime.strftime("%Y")
     newyr = int(year)
     if (random() > 0.3):
         newyr = randint(2004,int(year))
@@ -244,7 +273,10 @@ def music():
         name = artists[i].text.strip()
         if ('(' in name):
             name = name[:name.index('(')]
-        songlist.append((songs[i].text.strip(),name))
+        title = songs[i].text.strip()
+        if ('(' in title):
+            title = title[:title.index('(')]
+        songlist.append((title,name))
     music = songlist[randint(0,cnt-1)] 
     app.logger.info(str(songlist))
     if (gap == 0):
@@ -273,7 +305,7 @@ fourteens = ['다이어리','밸런타인', '화이트', '블랙','로즈','키�
 @app.route('/event', methods = ['POST', 'GET'])
 def event():
     #now = request.args.get("date")
-    now = time.strftime("%m%d")
+    now = ltime.strftime("%m%d")
     app.logger.info(now)
     if(now[2:] != '14'):
         event = events.find_one({"date": now})
