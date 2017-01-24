@@ -22,14 +22,13 @@ auth = tweepy.OAuthHandler(CONSUMER_KEY,CONSUMER_SECRET)
 auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
 user = tweepy.API(auth)
 
-
 app = Flask(__name__)
 
 ###### TweetBot Fishy Running! ################################################# 
 cron = Scheduler(daemon=True)
 cron.start()
 
-@cron.interval_schedule(minutes=5)
+@cron.interval_schedule(minutes=1)
 def tweet():
     print("i am gonna tweet!")
     #d = datetime.datetime.now(pytz.timezone("Asia/Seoul"))
@@ -40,17 +39,38 @@ def tweet():
     snap = stats.find_one({'date':now})
     fate = random()
     try:
-        if (fate < 0.5):
-            user.update_status("오늘은 친구들한테 " + str(snap['music']) +"개의 음악을 추천해줬어! 헤헷!!")
-        else:
+        if (fate > 0.9):
+            user.update_status("오늘은 친구들한테 " + str(snap['music']) +"개의 음악을 알려줬어! 장미와 음악은 정말 어울리는 조합이지!")
+        elif (fate > 0.8):
+            user.update_status("오늘 " + str(snap['vocab']) + "개의 영어 단어를 배웠어~ 난 정말 똑똑한 장미라구~")
+        elif (fate > 0.7):
             user.update_status("오늘은 친구들에게 " + str(snap['movie']) +"개의 영화을 추천해줬어! 잘했지??")
+        elif (fate > 0.6): 
+            user.update_status("오늘 친구들과 " + str(snap['total']) +"마디의 말을 햇어~ ㅎㅎ 난 역시 인기가 많은 장미야!")
+        elif (fate > 0.5):
+            count = snap['msg']
+            if (count > 200):
+                pass 
+            user.update_status("오늘은 친구들이 " + str(snap['msg']) + "번이나 말을 걸어주었어.... 이걸 어떻게 다 셋냐구? 사실 나는 외로운 장미야.... ")
+        else: 
+            fate2 = random()
+            if (fate2 > 0.8): msg = movie()
+            elif (fate2 > 0.6): msg = music()
+            elif (fate2 > 0.3): msg = talk()
+            elif (fate2 > 0.1): msg = vocab()
+            else: msg = event()
+            user.update_status(msg)
     except tweepy.error.TweepError as e: 
         if ("duplicate" in str(e)):    
             try: 
                 user.update_status("심심해!! 놀아줘!!! 나랑 놀아줘!!!!")
             except tweepy.error.TweepError as e: 
                 if ("duplicate" in str(e)):    
-                    user.update_status("어머! 벌써 " + now_time + "이네! 친구랑 놀다보니까 시간가는 줄도 몰랐다구~")
+                    fate3 = random()
+                    if (fate3 > 0.7):
+                        user.update_status("지금 시간이 " + now_time + "이네? 다들 뭐하고 있는 걸까.... 로지는 외로워....")
+                    elif (fate3 > 0.4): 
+                        user.update_status(now_time + "인데... 다들 바쁜가봐... 아무도 찾아주지 않아...")
 
 atexit.register(lambda: cron.shutdown(wait=False))
 
@@ -89,52 +109,63 @@ def get_korean(query):
 
 
 ##### Flask implementations ####################################################
-
 routes = ['movie','movie','music','music','talk','vocab','vocab','vocab','weather','event']
+routes_widget = ['movie','movie','music','music','talk','vocab','vocab','vocab','event']
 
 @app.route('/')
 def respond():
-    choice = randint(0,9)
-    return redirect(url_for(routes[choice]))
+    now = time.strftime("%Y%m%d")
+    stats.update_one({'date': now},{'$inc': {'total': 1}}, upsert=True)
+    if ("long") not in request.url:
+        choice = randint(0,8);
+        return redirect(url_for(routes_widget[choice]))
+    else: 
+        choice = randint(0,9)
+        if choice==8:
+            return redirect("http://52.79.161.158:8080/?long=" + request.args.get('long') + "&lat=" + request.args.get('lat'))
+        else:
+            return redirect(url_for(routes[choice]))
 
 @app.route('/movie', methods = ['GET'])
 def movie():
-    if request.method  == 'GET':
-        #Update count in DB
-        now = time.strftime("%Y%m%d")
-        stats.update_one({'date': now},{'$inc': {'movie': 1}}, upsert=True)
-        #Get random year 
-        year = time.strftime("%Y")
-        newyr = randint(2005,int(year))
-        now = str(newyr) + now[4:]
-        app.logger.info(now)
-        app.logger.info(newyr)
-        #Crawl info from movie page
-        url = 'http://movie.naver.com/movie/sdb/rank/rmovie.nhn?sel=cnt&tg=0&date='+now
-        data = requests.get(url).text
-        soup = BeautifulSoup(data,'lxml')
-        conts = soup.find("table", {"summary": "랭킹 테이블"}) 
-        top10 = conts.findAll("div", {"class":"tit3"})[:10] #returns a list
-        #app.logger.info("top10="+str(top10)+str(len(top10)))
-        titles = []
-        for i in range(10):
-            #app.logger.info(top10[i].text)
-            titles.append(top10[i].text.strip())
-        movie = titles[randint(0,9)] 
-        gap = int(year) - newyr
-        msg = "오늘 같은 날 영화는 어때? " + str(gap) + "년 전 이맘 때는 '" + movie + "'때문에 난리 였었지...." 
+    #Update count in DB
+    now = time.strftime("%Y%m%d")
+    stats.update_one({'date': now},{'$inc': {'movie': 1}}, upsert=True)
+    #Get random year 
+    year = time.strftime("%Y")
+    newyr = randint(2005,int(year))
+    now = str(newyr) + now[4:]
+    app.logger.info(now)
+    app.logger.info(newyr)
+    #Crawl info from movie page
+    url = 'http://movie.naver.com/movie/sdb/rank/rmovie.nhn?sel=cnt&tg=0&date='+now
+    data = requests.get(url).text
+    soup = BeautifulSoup(data,'lxml')
+    conts = soup.find("table", {"summary": "랭킹 테이블"}) 
+    top10 = conts.findAll("div", {"class":"tit3"})[:10] #returns a list
+    #app.logger.info("top10="+str(top10)+str(len(top10)))
+    titles = []
+    for i in range(10):
+        #app.logger.info(top10[i].text)
+        titles.append(top10[i].text.strip())
+    movie = titles[randint(0,9)] 
+    gap = int(year) - newyr
+    msg = "오늘 같은 날 영화는 어때? " + str(gap) + "년 전 이맘 때는 '" + movie + "'때문에 난리 였었지...." 
+    if (random() > 0.5):
+        msg = "갑자기 영화가 땡겨 그... '" + movie +"' 보고 싶어!"
+    if (gap == 0):
+        msg = "요즘은 '" + movie +"'가 히트라며? 설마 나없이 혼자 벌써 본거는 아니지...?"
         if (random() > 0.5):
-            msg = "갑자기 영화가 땡겨 그... '" + movie +"' 보고 싶어!"
-        if (gap == 0):
-            msg = "요즘은 '" + movie +"'가 히트라며? 설마 나없이 혼자 벌써 본거는 아니지...?"
-            if (random() > 0.5):
-                msg = "최근 '" + movie + "'라는 영화가 나왔던데! 같이 보장!! 오랜만의 데이또오~?ㅎㅎ" 
-        if (gap > 7):
-            msg = "오늘은 함께 추억에 젖어볼까? " + str(gap) + "년 전을 회상하며... '" + movie + "'같은 영화는 어때?"
-        return msg 
+            msg = "최근 '" + movie + "'라는 영화가 나왔던데! 같이 보장!! 오랜만의 데이또오~?ㅎㅎ" 
+    if (gap > 7):
+        msg = "오늘은 함께 추억에 젖어볼까? " + str(gap) + "년 전을 회상하며... '" + movie + "'같은 영화는 어때?"
+    return msg 
 
 @app.route('/message', methods = ['POST','GET'])
 def response():
+    #Update count in DB
+    now = time.strftime("%Y%m%d")
+    stats.update_one({'date': now},{'$inc': {'msg': 1}}, upsert=True)
     #key = "a351b95c-1a51-4f20-b6db-9a4db18d6703"
     key = "f06bc964-eb6b-4d8d-a6d3-25c181fe35e7" 
     if request.method == 'GET':
@@ -145,100 +176,98 @@ def response():
         data = json.loads(w)
         msg = data['response']
         msg = msg.replace("심심이", "장미")
+        msg = msg.replace("이모", "그대")
         return msg
 
 @app.route('/vocab',methods = ['GET'])
 def vocab():
-    if request.method == 'GET': 
-        #Update count in DB
-        now = time.strftime("%Y%m%d")
-        stats.update_one({'date': now},{'$inc': {'vocab': 1}}, upsert=True)
-        #Get random year 
-        year = time.strftime("%Y")
-        month = time.strftime("%m") 
-        day = time.strftime("%d")
-        newdate = str(randint(2000,int(year)-1)) + "/"  + str(randint(1,12)) + "/" +str(randint(1,31)) 
-        app.logger.info(newdate)
-        #Crawl info from movie page
-        url = 'http://www.dictionary.com/wordoftheday/' + newdate
-        data = requests.get(url).text
-        soup = BeautifulSoup(data,'lxml')
-        conts = soup.find("div", {"class": "definition-box"}) 
-        word = conts.text.split()[2]
-        print(word)
-        inkorean = get_korean(word)
-        if (inkorean == "N/A"):
-            return "요즘 영어공부를 하고 있는데 말이야... 으으..." + word +"뜻이 뭐였더라? 아는게 많으니까 헷갈린다...."
-        meanings = ','.join(inkorean)
-        msg = "요즘은 영어를 배우고 있어! " + word + "가 '" + meanings + "'인거 알았어??  후훗! 역시 나는 똑똑한 장미야"
-        prob = random()
-        if (prob > 0.7):
-            msg = "오늘은 어려운 영어 단어 하나 알려줄게...! " + word + "는 '" + meanings + "'! 내가 알려준거니까 꼭 기억해야해..."
-        elif (prob > 0.4):
-            msg = "오늘은 어떤 초등학교를 구경갔어.... 영어시간에 " + word + "를 배웠는데... '" + meanings+"'이래나 뭐래나..."
-        elif (prob > 0.2):
-            msg = word + "는 " + meanings + "!! " + word + "는 " + meanings + "!!!!!! " +  word + "는 " + meanings + "!!!!!!! 으.. 생각보다 안외워진다..."
-        return msg
+    #Update count in DB
+    now = time.strftime("%Y%m%d")
+    stats.update_one({'date': now},{'$inc': {'vocab': 1}}, upsert=True)
+    #Get random year 
+    year = time.strftime("%Y")
+    month = time.strftime("%m") 
+    day = time.strftime("%d")
+    newdate = str(randint(2000,int(year)-1)) + "/"  + str(randint(1,12)) + "/" +str(randint(1,31)) 
+    app.logger.info(newdate)
+    #Crawl info from movie page
+    url = 'http://www.dictionary.com/wordoftheday/' + newdate
+    data = requests.get(url).text
+    soup = BeautifulSoup(data,'lxml')
+    conts = soup.find("div", {"class": "definition-box"}) 
+    word = conts.text.split()[2]
+    print(word)
+    inkorean = get_korean(word)
+    if (inkorean == "N/A"):
+        return "요즘 영어공부를 하고 있는데 말이야... 으으..." + word +"뜻이 뭐였더라? 아는게 많으니까 헷갈린다...."
+    meanings = ','.join(inkorean)
+    msg = "요즘은 영어를 배우고 있어! " + word + "가 '" + meanings + "'인거 알았어??  후훗! 역시 나는 똑똑한 장미야"
+    prob = random()
+    if (prob > 0.7):
+        msg = "오늘은 어려운 영어 단어 하나 알려줄게...! " + word + "는 '" + meanings + "'! 내가 알려준거니까 꼭 기억해야해..."
+    elif (prob > 0.4):
+        msg = "오늘은 어떤 초등학교를 구경갔어.... 영어시간에 " + word + "를 배웠는데... '" + meanings+"'이래나 뭐래나..."
+    elif (prob > 0.2):
+        msg = word + "는 " + meanings + "!! " + word + "는 " + meanings + "!!!!!! " +  word + "는 " + meanings + "!!!!!!! 으.. 생각보다 안외워진다..."
+    return msg
         #top10 = conts.findAll("div", {"class":"tit3"})[:10] #returns a list
 
 @app.route('/music', methods = ['GET'])
 def music():
-    if request.method  == 'GET':
-        #Update count in DB
-        now = time.strftime("%Y%m%d")
-        stats.update_one({'date': now},{'$inc': {'music': 1}}, upsert=True)
-        year = time.strftime("%Y")
-        newyr = int(year)
-        if (random() > 0.3):
-            newyr = randint(2004,int(year))
-        now = str(newyr) + now[4:]
-        gap = int(year) - newyr
-        app.logger.info(newyr)
-        url = 'http://music.bugs.co.kr/chart/track/day/total?chartdate='+now
-        app.logger.info(url)
-        data = requests.get(url).text
-        soup = BeautifulSoup(data,'lxml')
-        conts = soup.find("table", {"class": "list trackList byChart"}) 
-        cnt = 5
-        if (gap == 0):
-            cnt = 15 
-        songs = conts.findAll("p", {"class":"title"})[:cnt] #returns a list
-        artists = conts.findAll("p", {"class":"artist"})[:cnt] #returns a list
-        #app.logger.info(songs)
-        #app.logger.info(artists)
-        songlist = []
-        for i in range(cnt):
-            more = artists[i].find("a",{"class":"more"})
-            if (more):
-                more.decompose()
-            name = artists[i].text.strip()
-            if ('(' in name):
-                name = name[:name.index('(')]
-            songlist.append((songs[i].text.strip(),name))
-        music = songlist[randint(0,cnt-1)] 
-        app.logger.info(str(songlist))
-        if (gap == 0):
-            msg = "나는 요즘 그 노래가 좋더라! 그...그... " + music[1] +"의 '" + music[0] + "'!! 여기까지 소문이 자자한걸?"
-        elif (gap == 1):
-            msg = "작년 이맘때는 '" + music[0] + "'인가?? 많이 들려줬는데.."
-        elif (gap < 5):
-            msg = "오늘은 " + music[1] + "의 '" + music[0] + "'가 듣고 싶다 ㅎㅎ 그게 " + str(gap) + "년 전 노래였던가...? 나는 장미 중에도 기억력이 좋은 편이지!" 
-        else:
-            msg = "갑자기 '" + music[0] + "'이 듣고 싶네... " + music[1] + " 디게 좋아했었는데... 벌써 그게 " + str(gap) +"년 전이라니... 앗...! 아니야!! 나는 아직 어려! 젋고 아름답다구!!" 
-            if (random() > 0.4):
-                msg = "혹시 '" + music[0] + "'라는 노래 알아? 머리에 자꾸 맴도는 걸......"
-                if (random() > 0.7):
-                    msg = "나... 사실 " + music[1] + " 엄청 좋아해..ㅎㅎ 넌 제일 좋아하는 가수가 누구야?"          
-        return msg
+    #Update count in DB
+    now = time.strftime("%Y%m%d")
+    stats.update_one({'date': now},{'$inc': {'music': 1}}, upsert=True)
+    year = time.strftime("%Y")
+    newyr = int(year)
+    if (random() > 0.3):
+        newyr = randint(2004,int(year))
+    now = str(newyr) + now[4:]
+    gap = int(year) - newyr
+    app.logger.info(newyr)
+    url = 'http://music.bugs.co.kr/chart/track/day/total?chartdate='+now
+    app.logger.info(url)
+    data = requests.get(url).text
+    soup = BeautifulSoup(data,'lxml')
+    conts = soup.find("table", {"class": "list trackList byChart"}) 
+    cnt = 5
+    if (gap == 0):
+        cnt = 15 
+    songs = conts.findAll("p", {"class":"title"})[:cnt] #returns a list
+    artists = conts.findAll("p", {"class":"artist"})[:cnt] #returns a list
+    #app.logger.info(songs)
+    #app.logger.info(artists)
+    songlist = []
+    for i in range(cnt):
+        more = artists[i].find("a",{"class":"more"})
+        if (more):
+            more.decompose()
+        name = artists[i].text.strip()
+        if ('(' in name):
+            name = name[:name.index('(')]
+        songlist.append((songs[i].text.strip(),name))
+    music = songlist[randint(0,cnt-1)] 
+    app.logger.info(str(songlist))
+    if (gap == 0):
+        msg = "나는 요즘 그 노래가 좋더라! 그...그... " + music[1] +"의 '" + music[0] + "'!! 여기까지 소문이 자자한걸?"
+    elif (gap == 1):
+        msg = "작년 이맘때는 '" + music[0] + "'인가?? 많이 들려줬는데.."
+    elif (gap < 5):
+        msg = "오늘은 " + music[1] + "의 '" + music[0] + "'가 듣고 싶다 ㅎㅎ 그게 " + str(gap) + "년 전 노래였던가...? 나는 장미 중에도 기억력이 좋은 편이지!" 
+    else:
+        msg = "갑자기 '" + music[0] + "'이 듣고 싶네... " + music[1] + " 디게 좋아했었는데... 벌써 그게 " + str(gap) +"년 전이라니... 앗...! 아니야!! 나는 아직 어려! 젊고 아름답다구!!" 
+        if (random() > 0.4):
+            msg = "혹시 '" + music[0] + "'라는 노래 알아? 머리에 자꾸 맴도는 걸......"
+            if (random() > 0.7):
+                msg = "나... 사실 " + music[1] + " 엄청 좋아해..ㅎㅎ 넌 제일 좋아하는 가수가 누구야?"          
+    return msg
     
 @app.route('/talk', methods = ['POST','GET'])
 def talk():
-    if request.method == 'GET':
-        idx = randint(0,39)
-        app.logger.info(idx)
-        atalk = qoutes.find_one({"idx":idx})
-        app.logger.info(atalk)
-        return atalk['qoute']
+    idx = randint(0,39)
+    app.logger.info(idx)
+    atalk = qoutes.find_one({"idx":idx})
+    app.logger.info(atalk)
+    return atalk['qoute']
 
 fourteens = ['다이어리','밸런타인', '화이트', '블랙','로즈','키스','실버', '그린','포토','와인','무비','허그']
 @app.route('/event', methods = ['POST', 'GET'])
@@ -258,7 +287,7 @@ def event():
             if (random() > 0.7):
                 msg = "왜 장미는 늘 얌전해야 하지...? 터프한 장미가 되고 싶어!"
             elif (random() > 0.5):
-                msg = "언젠가 꼭 장미를 선물하고 싶은 사람이 생기면... 그 때는 나를 꺽어도 좋아..."
+                msg = "언젠가 꼭 장미를 선물하고 싶은 사람이 생기면... 그 때는 나를 꺾어도 좋아..."
             return msg
     else: #14일 일때
         month = int(time.strftime("%m"))
@@ -272,11 +301,11 @@ def event():
 @app.route('/weather', methods = ['POST','GET'])
 def weather():
     if request.method == 'GET':
-        longitude = "37.5665350" 
-        latitude = "126.9779690"
-        #longitude = request.args.get("long")
-        #latitude = request.args.get("lat")
-        url = "http://api.wunderground.com/api/ffbde8a8a4da1bd0/conditions/q/" + longitude +"," + latitude + ".json"
+        #longitude = "37.5665350" 
+        #latitude = "126.9779690"
+        longitude = request.args.get("long")
+        latitude = request.args.get("lat")
+        url = "http://api.wunderground.com/api/ffbde8a8a4da1bd0/conditions/q/" + latitude +"," + longitude + ".json"
         w = requests.get(url).text
         app.logger.info(w)
         data = json.loads(w)
