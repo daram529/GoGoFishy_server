@@ -46,13 +46,18 @@ def tweet():
     snap = stats.find_one({'date':now})
     fate = random()
     try:
-        if (fate > 0.9):
+        if (fate > 0.95):
             user.update_status("오늘은 친구들한테 " + str(snap['music']) +"개의 음악을 알려줬어! 장미와 음악은 정말 어울리는 조합이지!")
+        elif (fate > 0.9):
+            msg = "오늘 " + str(snap['vocab']) + "개의 영어 단어를 배웠어~ 난 정말 똑똑한 장미라구~"
+            if (random() > 0.5):
+                msg += "나의 꿈은 5개 국어를 하는 장미가 되는거야!"
         elif (fate > 0.8):
-            user.update_status("오늘 " + str(snap['vocab']) + "개의 영어 단어를 배웠어~ 난 정말 똑똑한 장미라구~")
-        elif (fate > 0.7):
-            user.update_status("오늘은 친구들에게 " + str(snap['movie']) +"개의 영화을 추천해줬어! 잘했지??")
-        elif (fate > 0.6): 
+            if (random() > 0.5):
+                user.update_status("오늘은 친구들에게 " + str(snap['movie']) +"편의 영화을 추천해줬어! 잘했지??")
+            else:
+                user.update_status("안녕 나는 영화 감상하는 장미! 로지야! 오늘도 " + str(snap['movie']) + "편이나 알려줬지ㅎㅎ")
+        elif (fate > 0.7): 
             if (snap['total'] < 20):
                 user.update_status("오늘은 " + str(snap['total']) +"마디밖에 해주지 못했어.. 점점 나를 찾지 않아주거든...")
             else:   
@@ -60,7 +65,7 @@ def tweet():
                 if (random() > 0.5):
                     msg1 += " 꺄햐햐햐햐하하하ㅏ하ㅏ 인기의 비결이 궁금하다구? "
                 user.update_status(msg1)
-        elif (fate > 0.5):
+        elif (fate > 0.6):
             count = snap['msg']
             if (count > 200):
                 pass 
@@ -280,13 +285,19 @@ def music():
     music = songlist[randint(0,cnt-1)] 
     app.logger.info(str(songlist))
     if (gap == 0):
-        msg = "나는 요즘 그 노래가 좋더라! 그...그... " + music[1] +"의 '" + music[0] + "'!! 여기까지 소문이 자자한걸?"
+        if (random() > 0.5):
+            msg = "나는 요즘 그 노래가 좋더라! 그...그... " + music[1] +"의 '" + music[0] + "'!! 여기까지 소문이 자자한걸?"
+        else: 
+            msg = "시끄럽다고 찡찡대서 미안해ㅜㅜ 사실 나는 노래를 좋아하는 장미야! 최근에는 '" + music[0] + "'에 빠졌어! 역시 " + music[1] + "이야❤❤" 
     elif (gap == 1):
-        msg = "작년 이맘때는 '" + music[0] + "'인가?? 많이 들려줬는데.."
+        if (random() > 0.5):
+            msg = "작년 이맘때는 '" + music[0] + "'인가?? 많이 들려줬는데.."
+        else: 
+            msg = "작년에는 " + music[1] + "? 인기가 많았었는데.. 아직도 인기가 여전해?"
     elif (gap < 5):
-        msg = "오늘은 " + music[1] + "의 '" + music[0] + "'가 듣고 싶다 ㅎㅎ 그게 " + str(gap) + "년 전 노래였던가...? 나는 장미 중에도 기억력이 좋은 편이지!" 
+        msg = "오늘은 " + music[1] + "의 '" + music[0] + "' 듣고 싶다 ㅎㅎ 그게 " + str(gap) + "년 전 노래였던가...? 나는 장미 중에도 기억력이 좋은 편이지!" 
     else:
-        msg = "갑자기 '" + music[0] + "'이 듣고 싶네... " + music[1] + " 디게 좋아했었는데... 벌써 그게 " + str(gap) +"년 전이라니... 앗...! 아니야!! 나는 아직 어려! 젊고 아름답다구!!" 
+        msg = "갑자기 '" + music[0] + "' 듣고 싶네... " + music[1] + " 디게 좋아했었는데... 벌써 그게 " + str(gap) +"년 전이라니... 앗...! 아니야!! 나는 아직 어려! 젊고 아름답다구!!" 
         if (random() > 0.4):
             msg = "혹시 '" + music[0] + "'라는 노래 알아? 머리에 자꾸 맴도는 걸......"
             if (random() > 0.7):
@@ -295,7 +306,7 @@ def music():
     
 @app.route('/talk', methods = ['POST','GET'])
 def talk():
-    idx = randint(0,39)
+    idx = randint(0,42)
     app.logger.info(idx)
     atalk = qoutes.find_one({"idx":idx})
     app.logger.info(atalk)
